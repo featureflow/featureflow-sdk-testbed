@@ -40,5 +40,4 @@ delete the local copies once that's confirmed working — the scenario content s
 live here, not be duplicated per repo.
 
 This repo currently only covers **local, no-server** evaluation logic. A live-server
-harness (fixture flags + a running `sdk-server`/`event-server`/`featureflow` stack) is
-planned as a later phase and will live under a `harness/` directory here once built.
+harness is planned as a later phase and will live under a `harness/` directory here once built.
