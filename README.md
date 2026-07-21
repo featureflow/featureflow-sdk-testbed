@@ -2,8 +2,7 @@
 
 Shared Gherkin scenarios that every Featureflow SDK's local (no-server) evaluation logic
 must satisfy: variant bucketing (SHA-1 hash → percentage split), rule/audience/condition
-matching, and user-attribute building. Modeled on OpenFeature's
-[flagd-testbed](https://github.com/open-feature/flagd-testbed): one shared contract,
+matching, and user-attribute building. One shared contract,
 consumed by each SDK repo, with language-specific step definitions living in that SDK's
 own repo.
 
