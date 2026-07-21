@@ -1,12 +1,13 @@
 # Whether implicit attributes (featureflow.user.id, featureflow.date, featureflow.hourofday)
 # are injected by the UserBuilder at build time, or later by Client#evaluate at evaluation
-# time, is a legitimate per-SDK architecture choice (see e.g. featureflow-ruby-sdk's
-# CLAUDE.md, which injects at evaluate time so date/hour rules match "now" rather than
-# build time). The @builder-injects-implicit-attributes scenario below only applies to
-# SDKs that inject at build time — skip it (tag-exclude) for SDKs that inject at evaluate
-# time instead. Every SDK must still support these attributes being present when a rule is
-# matched; that's covered by rules.feature's featureflow.date scenario, which supplies the
-# attribute explicitly rather than relying on either injection point.
+# time, is a legitimate per-SDK architecture choice. SDKs that inject at evaluate time
+# (e.g. Ruby, Go) do so precisely so date/hour rules match "now" rather than the moment
+# the user object was built. Every SDK still needs these attributes present by the time a
+# rule is matched — that's covered by rules.feature's featureflow.date scenario, which
+# supplies the attribute explicitly rather than depending on either injection point. Run
+# exactly one of the two tagged scenarios below per SDK, matching its actual architecture:
+#   @builder-injects-implicit-attributes  — UserBuilder#build itself sets them
+#   @builder-defers-implicit-attributes   — UserBuilder#build must NOT set them (Client#evaluate does, later)
 Feature: UserBuilder
   Scenario: Test the User Builder can build a valid user with an id
     Given there is access to the User Builder module
@@ -38,6 +39,18 @@ Feature: UserBuilder
     And the user is built using the builder
     Then the result user should have a attribute with key "featureflow.user.id" and value "user"
     And the result user should have a attribute with key "featureflow.date" and current datetime in iso8601
+
+  @builder-defers-implicit-attributes
+  Scenario: Test the User Builder does not inject implicit attributes at build time
+    Given there is access to the User Builder module
+    When the builder is initialised with the id "user"
+    And the builder is given the following attributes
+      | key  | value  |
+      | age  | 21     |
+      | type | beta   |
+    And the user is built using the builder
+    Then the result user should not have a attribute with key "featureflow.user.id"
+    And the result user should not have a attribute with key "featureflow.date"
 
   Scenario: Test the User Builder throws an error when no key is provided
     Given there is access to the User Builder module
