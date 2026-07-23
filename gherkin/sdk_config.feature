@@ -96,3 +96,25 @@ Feature: Server-driven SDK config
     And a Featureflow client pointed at the local features endpoint
     Then the events client should become suspended
     And the events client send interval should be 300 seconds
+
+  Scenario: pollIntervalSeconds retunes the features polling timer
+    Given a local features endpoint with config header
+      """
+      {"pollIntervalSeconds": 60}
+      """
+    And a polling Featureflow client pointed at the local features endpoint
+    Then the polling interval should become 60 seconds
+
+  Scenario: server config never re-enables locally disabled polling
+    Given a local features endpoint with config header
+      """
+      {"pollIntervalSeconds": 60}
+      """
+    And a Featureflow client pointed at the local features endpoint
+    Then the polling interval should remain 0
+
+  Scenario: the client emits updated when a poll observes changed features
+    Given a local features endpoint whose features change on every request
+    And a polling Featureflow client pointed at the local features endpoint
+    When the features are refreshed
+    Then the client should have emitted 1 updated event

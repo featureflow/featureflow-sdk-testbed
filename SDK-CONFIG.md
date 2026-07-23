@@ -20,10 +20,10 @@ no extra request is ever made for it:
 `featureflow-edge-proxy` must replicate the `/features` header behaviour byte-for-byte
 (same header, same 304 handling) to stay wire-compatible with `sdk-server`.
 
-## Schema (v1)
+## Schema (v1.1)
 
 ```json
-{ "eventsEnabled": true, "mode": "summary", "flushIntervalSeconds": 60 }
+{ "eventsEnabled": true, "mode": "summary", "flushIntervalSeconds": 60, "pollIntervalSeconds": 20 }
 ```
 
 | Field | Type | Meaning |
@@ -31,6 +31,11 @@ no extra request is ever made for it:
 | `eventsEnabled` | boolean | Master switch. `false` suspends event recording and sending; the SDK drops its pending events and stops posting until re-enabled by a later config. Suspension is reversible — unlike a 401/403, which disables events permanently for the client's lifetime. |
 | `mode` | `"summary"` \| `"full"` \| `"off"` | `summary` (default): one event per (featureKey, variant) per flush with summed `impressions`. `full`: one event per evaluation, `impressions: 1`, user attached to every event (raw fidelity, e.g. for a paid analytics tier). `off`: record nothing (equivalent to suspension, expressed as a mode). |
 | `flushIntervalSeconds` | number | Events flush period. SDKs accept `1..3600` and restart their flush timer when it changes. |
+| `pollIntervalSeconds` | number | Features polling period. SDKs accept `5..3600` and restart their poll timer when it changes. A local "polling disabled" setting (e.g. `interval: 0`) is never overridden by the server. |
+
+Reserved for future use (SDKs must already tolerate them per the unknown-field rule):
+`streamEnabled` (boolean) and `streamUrl` (string) — will activate the dormant SSE
+invalidation channel once implemented.
 
 ## SDK rules
 
@@ -41,6 +46,24 @@ no extra request is ever made for it:
 - **Local disable wins.** If events are disabled in local SDK config (`disableEvents`) or
   permanently disabled by a 401/403, server config must never re-enable them.
 - Config may arrive from either channel at any time; last received wins.
+
+## Related dormant wire contracts (experimentation receivers)
+
+Shipped in SDKs ahead of server-side experimentation so field-deployed clients are ready
+when it launches:
+
+- **Goal (track) events** — `POST /api/sdk/v1/events` rows of shape
+  `{ "type": "goal", "goalKey", "user", "value"?, "data"?, "timestamp" }`, produced by the
+  SDK `track(goalKey, user, details?)` API where `details` is a number (the metric value)
+  or an object `{ value?, ...custom }` — deliberately congruent with the OpenFeature
+  tracking API (`track(eventName, context, details)`). Goals are sent raw, never
+  summarised; analysis joins them against exposures on `user.id`. Servers that do not yet
+  process goals ignore rows without a `featureKey`.
+- **Per-flag exposure fidelity** — an optional boolean `trackEvents` on a feature control
+  in the `/features` payload. When true, the SDK attaches each distinct user to that
+  flag's summary entries once per (user, flag) per flush interval — instead of the global
+  once-per-user dedupe — so every (user, flag, variant) assignment reaches the server for
+  experiment analysis. Old SDKs ignore the field.
 
 ## Versioning
 
