@@ -45,4 +45,4 @@ Feature: JSON Value Resolution
       | off |                                     |
     When jsonValue is called
     Then an evaluate event should be queued with featureKey "my-feature" and evaluatedVariant "on"
-    And the queued event should only have keys "featureKey, evaluatedVariant, expectedVariant, user"
+    And the queued event should only have keys "featureKey, evaluatedVariant, user"
