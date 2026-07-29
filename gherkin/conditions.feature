@@ -117,3 +117,28 @@ Scenario Outline: Test the "<operator>" operator returns a "<result>" result for
       | before             | 2026-07-21T23:00:00+10:00 | 2026-07-21T14:00:00Z    | true   |
       | after              | not-a-date               | 2026-07-21T06:00:00Z     | false  |
       | before             | not-a-date               | 2026-07-21T06:00:00Z     | false  |
+
+      # Date-only values. The dashboard's date picker emits these, and they are valid ISO-8601
+      # calendar dates. They denote UTC midnight — see CONTRACT.md in
+      # featureflow-client-sdk-testbed. Local midnight is not acceptable: the same rule would
+      # then fire at a different instant on every host depending on its timezone.
+      #
+      # These rows must be run with a NON-UTC local timezone to be meaningful. Under UTC a
+      # local-time implementation passes them anyway. Go, Java, Python and Ruby all failed at
+      # least one of these before 2026-07-29.
+      | after              | 2026-07-03T00:00:01Z     | 2026-07-03               | true   |
+      # The row that catches local-midnight: east of UTC, local midnight on the 3rd falls
+      # earlier in UTC, so 23:59:59Z would wrongly appear to be after it.
+      | after              | 2026-07-02T23:59:59Z     | 2026-07-03               | false  |
+      | before             | 2026-07-02T23:59:59Z     | 2026-07-03               | true   |
+      | before             | 2026-07-03T00:00:01Z     | 2026-07-03               | false  |
+      # Date-only on both sides, and as the earlier operand.
+      | before             | 2026-07-03               | 2026-07-29               | true   |
+      | after              | 2026-07-29               | 2026-07-03               | true   |
+      | before             | 2026-07-03               | 2026-07-03               | false  |
+      | after              | 2026-07-03               | 2026-07-03               | false  |
+      # A date-only value against a zoned timestamp resolves by instant, not by string order.
+      | before             | 2026-07-03               | 2026-07-03T00:00:01Z     | true   |
+      # Malformed date-like values still fail closed rather than throwing.
+      | after              | 2026-07-32               | 2026-07-03               | false  |
+      | after              | 2026-7-3                 | 2026-07-03               | false  |
