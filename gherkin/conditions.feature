@@ -34,6 +34,14 @@ Scenario Outline: Test the "<operator>" operator returns a "<result>" result for
 
     | fakeOperator    | my-test-value | doesn't matter         | false  |
 
+    # An invalid pattern is reachable from any dashboard-authored rule — someone typing a bad
+    # regex into a targeting condition. It must return false, not raise into the host
+    # application. Ruby (Regexp.new -> RegexpError) and Python (re.compile -> re.error) both
+    # raised as of 2026-07-29; Go and the client SDKs already failed closed.
+    | matches         | my-test-value | [unclosed              | false  |
+    | matches         | my-test-value | (unbalanced            | false  |
+    | matches         | my-test-value | *bad-quantifier        | false  |
+
 
 
   Scenario Outline: Test the "<operator>" operator returns a "<result>" result for an array of strings (target: "<target>", values: "<values>", operator: "<operator>", result: "<result>")
